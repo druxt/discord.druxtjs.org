@@ -1,8 +1,0 @@
-[build]
-  publish = "public"
-
-[[redirects]]
-  from = "/*"
-  to = "https://discord.gg/QnZD46c"
-  status = 301
-  force = true
