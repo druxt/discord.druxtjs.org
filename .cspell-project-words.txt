@@ -9,6 +9,7 @@ ddev
 druxt
 druxtjs
 esac
+gitleaks
 htmlvalidate
 knip
 linkcheck
