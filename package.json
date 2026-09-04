@@ -1,0 +1,41 @@
+{
+  "name": "discord.druxtjs.org",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Redirector from discord.druxtjs.org to the DruxtJS Discord invite.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/druxt/discord.druxtjs.org.git"
+  },
+  "packageManager": "pnpm@10.20.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "lint": "pnpm lint:html && pnpm lint:style && pnpm lint:md && pnpm lint:spell && pnpm lint:private",
+    "lint:html": "html-validate index.html",
+    "lint:style": "stylelint index.html",
+    "lint:md": "markdownlint-cli2 \"**/*.md\" \"#node_modules\"",
+    "lint:spell": "cspell --no-progress --dot \"**/*.{html,md,json,jsonc,yml,yaml,js,mjs,toml}\"",
+    "test": "node --test \"tests/unit/**/*.test.js\"",
+    "test:e2e": "playwright test",
+    "test:all": "pnpm test && pnpm test:e2e",
+    "lint:private": "node scripts/lint-private-refs.mjs"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
+    "@commitlint/cli": "21.2.2",
+    "@commitlint/config-conventional": "21.2.2",
+    "@playwright/test": "1.62.1",
+    "cspell": "10.2.1",
+    "html-validate": "11.13.0",
+    "markdownlint-cli2": "0.23.2",
+    "node-html-parser": "9.0.3",
+    "postcss-html": "2.0.0",
+    "serve": "14.2.6",
+    "stylelint": "17.14.1",
+    "stylelint-config-standard": "40.0.0"
+  }
+}

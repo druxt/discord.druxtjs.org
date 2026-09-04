@@ -1,0 +1,7 @@
+# Link checker config. Runs non-blocking in CI: discord.gg answers bot
+# requests with 403/405 depending on the day, and a rate-limited invite
+# endpoint must never be the reason a docs change cannot merge.
+max_retries = 2
+timeout = 20
+accept = [200, 403, 405, 429]
+user_agent = "Mozilla/5.0 (compatible; lychee link checker)"

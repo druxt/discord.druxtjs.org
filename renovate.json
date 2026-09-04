@@ -1,0 +1,17 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":semanticCommits"],
+  "labels": ["dependencies"],
+  "packageRules": [
+    {
+      "description": "Group the lint and test toolchain into one PR - nothing here ships to users.",
+      "matchDepTypes": ["devDependencies"],
+      "groupName": "dev tooling"
+    },
+    {
+      "description": "Playwright's npm package and its browser downloads are version-locked; never bump it alone.",
+      "matchPackageNames": ["@playwright/test", "@axe-core/playwright"],
+      "groupName": "playwright"
+    }
+  ]
+}

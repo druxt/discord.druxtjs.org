@@ -1,0 +1,264 @@
+---
+# CI for discord.druxtjs.org - a single static page that GitHub Pages serves
+# straight from the default branch with no build step. There is nothing to
+# compile, so the pipeline exists to stop the two things that actually break a
+# redirector: the invite drifting out of sync between the four places it is
+# written, and the page regressing on accessibility.
+#
+# GitHub Actions (.github/workflows/ci.yml) guards the branch Pages deploys
+# from; this pipeline is the same checks at merge-request time, where review
+# happens. Keep the two in step when either changes.
+
+stages:
+  - lint
+  - test
+  - secret-detection
+  - preview
+
+variables:
+  NODE_IMAGE: node:22.23.2
+  PNPM_VERSION: '10.20.0'
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $CI_COMMIT_BRANCH
+
+default:
+  tags: [docker]
+  timeout: 15m
+  before_script:
+    - 'section_start() { local n="$1" t="${2:-$1}"; printf "\e[0Ksection_start:%s:%s\r\e[0K%s\n" "$(date +%s)" "$n" "$t"; }'
+    - 'section_end() { printf "\e[0Ksection_end:%s:%s\r\e[0K\n" "$(date +%s)" "$1"; }'
+
+# Shared node setup. The pnpm store is kept in-project so GitLab can cache it;
+# the lockfile hash keys the cache, so a dependency bump misses once and hits
+# thereafter.
+.node:
+  image: $NODE_IMAGE
+  interruptible: true
+  cache:
+    key:
+      files:
+        - pnpm-lock.yaml
+    paths:
+      - .pnpm-store/
+  before_script:
+    - !reference [default, before_script]
+    - corepack enable
+    - corepack prepare pnpm@${PNPM_VERSION} --activate
+    - pnpm config set store-dir .pnpm-store
+    - pnpm install --frozen-lockfile
+
+#
+# --- Lint ---
+#
+
+lint:
+  extends: .node
+  stage: lint
+  script:
+    - section_start "html" "Validating index.html"
+    - pnpm lint:html
+    - section_end "html"
+    - section_start "style" "Linting the inline stylesheet"
+    - pnpm lint:style
+    - section_end "style"
+    - section_start "markdown" "Linting Markdown"
+    - pnpm lint:md
+    - section_end "markdown"
+    - section_start "spell" "Spell checking"
+    - pnpm lint:spell
+    - section_end "spell"
+
+lint:yaml:
+  stage: lint
+  image: mcr.microsoft.com/devcontainers/python:3
+  interruptible: true
+  script:
+    - section_start "yamllint" "Linting YAML"
+    - pip install yamllint -q
+    - yamllint .gitlab-ci.yml .github/workflows/ci.yml
+    - section_end "yamllint"
+    # The GitHub workflow guards the branch Pages deploys from, and nothing on
+    # this side runs it, so lint it here rather than discovering a typo after a
+    # push. Architecture is detected because the runner may be ARM.
+    - section_start "actionlint" "Linting the GitHub Actions workflow"
+    - |
+      actionlint_version="1.7.7"
+      case "$(uname -m)" in
+        aarch64|arm64)
+          actionlint_arch=arm64
+          actionlint_sha256=401942f9c24ed71e4fe71b76c7d638f66d8633575c4016efd2977ce7c28317d0
+          ;;
+        x86_64)
+          actionlint_arch=amd64
+          actionlint_sha256=023070a287cd8cccd71515fedc843f1985bf96c436b7effaecce67290e7e0757
+          ;;
+        *) echo "Unsupported architecture: $(uname -m)" >&2; exit 1 ;;
+      esac
+      url="https://github.com/rhysd/actionlint/releases/download/v${actionlint_version}"
+      curl -fsSL "${url}/actionlint_${actionlint_version}_linux_${actionlint_arch}.tar.gz" -o /tmp/actionlint.tar.gz
+      echo "${actionlint_sha256}  /tmp/actionlint.tar.gz" | sha256sum -c -
+      tar -xzf /tmp/actionlint.tar.gz -C /tmp actionlint
+    - /tmp/actionlint -no-color -oneline .github/workflows/ci.yml
+    - section_end "actionlint"
+
+commitlint:
+  extends: .node
+  stage: lint
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+  script:
+    # commitlint shells out to `git log`, which refuses to run when the
+    # checkout's owning UID differs from the job image's.
+    - git config --global --add safe.directory "$CI_PROJECT_DIR"
+    - pnpm exec commitlint --from "$CI_MERGE_REQUEST_DIFF_BASE_SHA" --to "$CI_COMMIT_SHA" --verbose
+
+# Non-blocking: discord.gg answers automated requests with 403 or 405 depending
+# on the day, and a rate-limited invite endpoint must never be the reason a
+# docs change cannot merge.
+linkcheck:
+  stage: lint
+  image: $NODE_IMAGE
+  interruptible: true
+  allow_failure: true
+  before_script: []
+  script:
+    - ARCH=$(uname -m)
+    - RELEASES=https://api.github.com/repos/lycheeverse/lychee/releases/latest
+    - ASSET="https://[^\"]*${ARCH}-unknown-linux-gnu.tar.gz"
+    - LYCHEE_URL=$(curl -fsSL --retry 3 --max-time 30 "$RELEASES" | grep -o "$ASSET" | head -1)
+    - test -n "$LYCHEE_URL"
+    - curl -fsSL --retry 3 --retry-delay 5 "$LYCHEE_URL" -o /tmp/lychee.tar.gz
+    - tar -xzf /tmp/lychee.tar.gz -C /tmp && install /tmp/lychee-*/lychee /usr/local/bin/lychee
+    - lychee --no-progress --format detailed --config .lychee.toml
+      index.html README.md CONTRIBUTING.md AGENTS.md 2>&1 | tee lychee-report.md
+  artifacts:
+    when: always
+    paths:
+      - lychee-report.md
+    expire_in: 1 week
+    expose_as: 'Linkcheck report'
+
+#
+# --- Test ---
+#
+
+test:unit:
+  extends: .node
+  stage: test
+  needs: []
+  script:
+    - mkdir -p reports
+    - pnpm exec node --test --test-reporter=spec --test-reporter-destination=stdout
+      --test-reporter=junit --test-reporter-destination=reports/junit.xml
+      "tests/unit/**/*.test.js"
+  artifacts:
+    when: always
+    paths:
+      - reports/
+    reports:
+      junit: reports/junit.xml
+
+#
+# --- Secret detection ---
+#
+# gitleaks rather than GitLab's Secret-Detection template: that template is an
+# Ultimate-tier feature and silently produces no job on this instance, so the
+# include looked like coverage while scanning nothing.
+secret-detection:
+  stage: secret-detection
+  image: $NODE_IMAGE
+  interruptible: true
+  needs: []
+  before_script: []
+  script:
+    - |
+      gitleaks_version="8.30.1"
+      case "$(uname -m)" in
+        aarch64|arm64)
+          gitleaks_arch=arm64
+          gitleaks_sha256=e4a487ee7ccd7d3a7f7ec08657610aa3606637dab924210b3aee62570fb4b080
+          ;;
+        x86_64)
+          gitleaks_arch=x64
+          gitleaks_sha256=551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb
+          ;;
+        *) echo "Unsupported architecture: $(uname -m)" >&2; exit 1 ;;
+      esac
+      url="https://github.com/gitleaks/gitleaks/releases/download/v${gitleaks_version}"
+      curl -fsSL "${url}/gitleaks_${gitleaks_version}_linux_${gitleaks_arch}.tar.gz" -o /tmp/gitleaks.tar.gz
+      echo "${gitleaks_sha256}  /tmp/gitleaks.tar.gz" | sha256sum -c -
+      tar -xzf /tmp/gitleaks.tar.gz -C /tmp gitleaks
+      chmod +x /tmp/gitleaks
+    - /tmp/gitleaks dir . --no-banner --redact --report-path gitleaks-report.json
+  artifacts:
+    when: always
+    paths:
+      - gitleaks-report.json
+    expire_in: 1 week
+
+test:e2e:
+  extends: .node
+  stage: test
+  needs: []
+  script:
+    - pnpm exec playwright install --with-deps chromium
+    - pnpm test:e2e
+  artifacts:
+    when: always
+    paths:
+      - test-results/
+      - playwright-report/
+    reports:
+      junit: test-results/junit.xml
+    expire_in: 1 week
+
+#
+# --- Preview ---
+#
+# Manual: serves the page through a Cloudflare quick tunnel so a reviewer can
+# see the real thing, on a phone, with the real fonts and the real redirect,
+# rather than reading a diff of inline CSS. No account or token needed.
+#
+# Click "Run" on this job in the pipeline view, then watch its log for the
+# https://*.trycloudflare.com URL. The tunnel lives as long as the job.
+#
+# Following the redirect leaves the preview and lands on the live Discord
+# invite, which is the point: it is the one behaviour a static diff cannot
+# show you.
+preview:
+  stage: preview
+  image: $NODE_IMAGE
+  interruptible: false
+  needs: []
+  timeout: 1h
+  before_script: []
+  rules:
+    - when: manual
+      allow_failure: true
+  script:
+    - |
+      cloudflared_version="2026.8.3"
+      case "$(uname -m)" in
+        aarch64|arm64)
+          cloudflared_arch=arm64
+          cloudflared_sha256=4bcfd35521a7cbc545ebfd5d57334a71ee180e2a64874981f374c81472118391
+          ;;
+        x86_64)
+          cloudflared_arch=amd64
+          cloudflared_sha256=f29324fe934d1e100617484c78deef803c4dc2cd351d645bbde42e96b4fccc5e
+          ;;
+        *) echo "Unsupported architecture: $(uname -m)" >&2; exit 1 ;;
+      esac
+      url="https://github.com/cloudflare/cloudflared/releases/download/${cloudflared_version}"
+      curl -fsSL "${url}/cloudflared-linux-${cloudflared_arch}" -o /usr/local/bin/cloudflared
+      echo "${cloudflared_sha256}  /usr/local/bin/cloudflared" | sha256sum -c -
+      chmod +x /usr/local/bin/cloudflared
+    - npx --yes serve --no-clipboard --no-port-switching -l 8080 . &
+    - npx --yes wait-on http://127.0.0.1:8080
+    - echo "Tunnel starting - the preview URL appears below as https://*.trycloudflare.com"
+    - cloudflared tunnel --url http://127.0.0.1:8080 --no-autoupdate

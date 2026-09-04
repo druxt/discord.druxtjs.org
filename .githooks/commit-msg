@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Conventional Commits check. These repos squash-merge, so the merge commit
+# subject comes from the MR/PR title - keep that conventional too.
+set -euo pipefail
+exec mise run hooks:commit-msg "$1"

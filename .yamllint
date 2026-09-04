@@ -1,0 +1,13 @@
+---
+extends: default
+
+rules:
+  # Matches druxt/druxt.js: shell one-liners in script: blocks do not wrap
+  # usefully, so length is a warning rather than an error.
+  line-length:
+    max: 200
+    level: warning
+  # GitHub Actions' `on:` trigger key parses as the boolean True. Checking
+  # keys would reject every valid workflow file.
+  truthy:
+    check-keys: false

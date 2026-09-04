@@ -1,0 +1,30 @@
+{
+  "version": "0.2",
+  "language": "en,en-GB",
+  "dictionaryDefinitions": [
+    {
+      "name": "project-words",
+      "path": "./.cspell-project-words.txt",
+      "addWords": true
+    }
+  ],
+  "dictionaries": [
+    "project-words"
+  ],
+  "ignorePaths": [
+    "node_modules/**",
+    ".pnpm-store/**",
+    "pnpm-lock.yaml",
+    "test-results/**",
+    "playwright-report/**",
+    ".git/**"
+  ],
+  "ignoreRegExpList": [
+    "/#[0-9a-fA-F]{3,8}\\b/",
+    "/discord\\.gg\\/[A-Za-z0-9]+/",
+    "/\"d\":\\s*\"[^\"]*\"/",
+    "/<path[^>]*>/",
+    "/\\\\e\\[[0-9]*K/g"
+  ],
+  "useGitignore": true
+}

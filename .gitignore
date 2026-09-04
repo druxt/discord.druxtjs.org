@@ -1,1 +1,7 @@
 node_modules
+.pnpm-store
+
+# Test output
+test-results
+playwright-report
+reports

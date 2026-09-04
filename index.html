@@ -19,6 +19,7 @@
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body { height: 100%; }
+
     body {
       background: radial-gradient(115% 115% at 50% 0%, var(--bg) 0%, var(--bg-edge) 100%);
       color: var(--text);
@@ -31,6 +32,7 @@
       padding: 32px 24px;
       -webkit-font-smoothing: antialiased;
     }
+
     main {
       display: flex;
       flex-direction: column;
@@ -39,6 +41,7 @@
       max-width: 420px;
     }
     .logo { width: 76px; height: auto; display: block; }
+
     h1 {
       font-size: 22px;
       font-weight: 600;
@@ -46,6 +49,7 @@
       line-height: 1.35;
       text-wrap: balance;
     }
+
     p.sub {
       font-size: 15px;
       line-height: 1.55;
@@ -53,6 +57,7 @@
     }
     a { color: var(--link); }
     a:hover { color: var(--link-hover); }
+
     .invite {
       display: inline-block;
       margin-top: 4px;
@@ -65,10 +70,12 @@
       border-radius: 6px;
     }
     .invite:hover { background: #5ac897; color: #0c1720; }
+
     .invite:focus-visible {
       outline: 2px solid var(--link);
       outline-offset: 3px;
     }
+
     .bar {
       width: 180px;
       height: 3px;
@@ -77,6 +84,7 @@
       overflow: hidden;
       margin-top: 8px;
     }
+
     .bar span {
       display: block;
       height: 100%;
@@ -85,13 +93,16 @@
       transform-origin: left;
       animation: fill 1.5s linear forwards;
     }
+
     @keyframes fill {
       from { transform: scaleX(0); }
       to { transform: scaleX(1); }
     }
+
     @media (prefers-reduced-motion: reduce) {
       .bar span { animation: none; }
     }
+
     footer {
       position: absolute;
       bottom: 28px;

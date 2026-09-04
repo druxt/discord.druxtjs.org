@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Lint and run the fast (non-browser) tests before every commit. The Playwright
+# suite is left to CI - it needs a browser download.
+set -euo pipefail
+exec mise run hooks:pre-commit
