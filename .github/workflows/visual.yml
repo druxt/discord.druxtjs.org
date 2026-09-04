@@ -1,0 +1,71 @@
+---
+# Visual regression against the x64 baselines, reported as one sticky pull
+# request comment with the images in the thread.
+#
+# Separate from ci.yml because it needs contents: write to publish the
+# screenshots, and that permission has no business on the lint and test jobs.
+name: Visual
+
+on:
+  pull_request:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: visual-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  visual:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+
+      - name: Compare against baselines
+        id: visual
+        continue-on-error: true
+        run: pnpm test:visual
+
+      # A pull request from a fork gets a read-only token, so it can neither
+      # push the report branch nor comment. Say so in the job summary instead
+      # of failing on a permission error the contributor cannot fix.
+      - name: Report
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: bash .github/scripts/post-visual-comment.sh
+
+      - name: Explain the fork limitation
+        if: ${{ github.event.pull_request.head.repo.full_name != github.repository
+          && steps.visual.outcome == 'failure' }}
+        run: |
+          {
+            echo "### Visual differences found"
+            echo ""
+            echo "This run came from a fork, whose token cannot publish images"
+            echo "or comment. Download the \`visual-report\` artifact below."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: visual-report
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7
+
+      - name: Fail if baselines did not match
+        if: ${{ steps.visual.outcome == 'failure' }}
+        run: exit 1

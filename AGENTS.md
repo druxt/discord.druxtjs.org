@@ -36,6 +36,24 @@ request, not a way to get green.
 `.gitlab-ci.yml` runs the same checks where review happens. A check added to
 one belongs in the other.
 
+## Visual baselines are per architecture
+
+There are two committed baseline sets, `arm64` and `x64`, because Chromium's
+text rendering differs between them. Regenerating one and committing it alone
+turns the other pipeline red, and regenerating both from the same machine is
+worse, because it looks correct and is not. Each set comes from a job running
+on that architecture. See CONTRIBUTING.md.
+
+## The visual-reports branch is not source
+
+`visual-reports` is an orphan branch holding screenshots referenced by pull
+request comments, because GitHub will not accept an image through its API.
+Never merge it, never deploy from it, and do not treat its contents as part of
+the project. A failing run replaces that PR's directory; a passing run deletes
+the comment but leaves the images, and git keeps the blobs either way, so the
+branch is append-only in practice. That is fine at this repository's rate of
+change and worth knowing before someone wonders why it exists.
+
 ## Commands
 
 | Command | What it does |
@@ -44,3 +62,4 @@ one belongs in the other.
 | `pnpm lint` | HTML, stylesheet, Markdown, spelling, private hosts |
 | `pnpm test` | Markup and invite consistency, no browser |
 | `pnpm test:e2e` | Playwright: redirect, keyboard, reduced motion, axe |
+| `pnpm test:visual` | Four viewports against this architecture's baselines |

@@ -12,6 +12,7 @@
 stages:
   - lint
   - test
+  - visual
   - secret-detection
   - preview
 
@@ -72,6 +73,14 @@ lint:
     - section_start "spell" "Spell checking"
     - pnpm lint:spell
     - section_end "spell"
+
+lint:shell:
+  stage: lint
+  image: koalaman/shellcheck-alpine:v0.11.0
+  interruptible: true
+  before_script: []
+  script:
+    - shellcheck .github/scripts/*.sh .gitlab/scripts/*.sh .githooks/*
 
 lint:yaml:
   stage: lint
@@ -162,6 +171,48 @@ test:unit:
       - reports/
     reports:
       junit: reports/junit.xml
+
+#
+# --- Visual ---
+#
+# Compares four viewports against the arm64 baselines (this runner is Docker
+# on Apple silicon; GitHub's x64 set is compared there). Failures are posted
+# as one sticky merge request note with the images inline, and the note is
+# removed once the comparison goes green again.
+visual:
+  extends: .node
+  stage: visual
+  needs: []
+  script:
+    - pnpm exec playwright install --with-deps chromium
+    - pnpm test:visual
+  after_script:
+    - bash .gitlab/scripts/post-visual-failure-comment.sh
+  artifacts:
+    when: always
+    paths:
+      - test-results/
+      - playwright-report/
+    expire_in: 1 week
+
+# Manual regeneration of the arm64 baselines. Download the artifact and commit
+# the PNGs. Never regenerate them on a different architecture: Chromium's text
+# rendering differs, and the committed set would then fail on this runner.
+visual:update:
+  extends: .node
+  stage: visual
+  needs: []
+  rules:
+    - when: manual
+      allow_failure: true
+  script:
+    - pnpm exec playwright install --with-deps chromium
+    - pnpm test:visual:update
+  artifacts:
+    when: always
+    paths:
+      - tests/visual/__screenshots__/
+    expire_in: 1 day
 
 #
 # --- Secret detection ---

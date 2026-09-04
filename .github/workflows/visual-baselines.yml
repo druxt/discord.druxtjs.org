@@ -1,0 +1,30 @@
+---
+# Manual regeneration of the x64 baselines. Never regenerate them locally:
+# Chromium renders text differently per architecture, and the arm64 set is
+# produced by the GitLab `visual:update` job instead.
+name: Update visual baselines
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:visual:update
+      - uses: actions/upload-artifact@v4
+        with:
+          name: x64-baselines
+          path: tests/visual/__screenshots__/
+          retention-days: 7

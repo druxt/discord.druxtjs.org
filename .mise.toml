@@ -34,9 +34,17 @@ run = "pnpm test"
 description = "Run the Playwright suite (redirect, keyboard, reduced motion, axe)"
 run = "pnpm exec playwright install --with-deps chromium && pnpm test:e2e"
 
+[tasks."test:visual"]
+description = "Compare the four viewports against the baselines for this architecture"
+run = "pnpm exec playwright install --with-deps chromium && pnpm test:visual"
+
+[tasks."test:visual:update"]
+description = "Regenerate the baselines for THIS architecture only - see CONTRIBUTING"
+run = "pnpm exec playwright install --with-deps chromium && pnpm test:visual:update"
+
 [tasks.ci]
 description = "Everything CI runs"
-depends = ["lint", "test", "test:e2e"]
+depends = ["lint", "test", "test:e2e", "test:visual"]
 
 [tasks.commitlint]
 description = "Validate a commit message (pass the message-file path)"
