@@ -1,7 +1,7 @@
 # discord.druxtjs.org
 
 A simple redirector to the Druxt Discord invite, which is hard to remember.
-<https://discord.gg/QnZD46c>
+<https://discord.gg/hndGTbyA92>
 
 ---
 
