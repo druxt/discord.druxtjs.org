@@ -68,11 +68,18 @@ body_file=$(mktemp)
     label=$(basename "$(dirname "$actual")" | sed 's/-retry[0-9]*$//')
     echo "#### \`${label}\`"
     echo
+    # A first run has no baseline to compare against, so expected and diff
+    # were never written. Say so rather than linking an image that 404s.
+    cell() {
+      if [ -f "$work/$dest/${label}-$1.png" ]; then
+        printf '<img src="%s/%s-%s.png" width="260">' "$raw" "$label" "$1"
+      else
+        printf 'none yet'
+      fi
+    }
     echo "| Baseline | Current | Diff |"
     echo "| --- | --- | --- |"
-    echo -n "| <img src=\"${raw}/${label}-expected.png\" width=\"260\"> "
-    echo -n "| <img src=\"${raw}/${label}-actual.png\" width=\"260\"> "
-    echo "| <img src=\"${raw}/${label}-diff.png\" width=\"260\"> |"
+    echo "| $(cell expected) | $(cell actual) | $(cell diff) |"
     echo
   done
   echo "If the change is intended, regenerate the baselines with the manual"
