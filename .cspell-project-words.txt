@@ -3,10 +3,12 @@ ddev
 druxt
 druxtjs
 esac
+koalaman
 linkcheck
 lndo
 noopener
 oneline
+shellcheck
 stylesheet
 tabnabbing
 wcag
