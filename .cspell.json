@@ -13,6 +13,7 @@
   ],
   "ignorePaths": [
     "node_modules/**",
+    ".pnpm-store/**",
     "pnpm-lock.yaml",
     "test-results/**",
     "playwright-report/**",
@@ -24,5 +25,6 @@
     "/\"d\":\\s*\"[^\"]*\"/",
     "/<path[^>]*>/",
     "/\\\\e\\[[0-9]*K/g"
-  ]
+  ],
+  "useGitignore": true
 }
