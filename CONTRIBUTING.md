@@ -32,6 +32,7 @@ If you only touched prose, `pnpm lint` is enough.
 | `lint:private` | Publishing a URL that only resolves on a private network |
 | `test` | The invite drifting apart across the four places it is written |
 | `test:e2e` | The redirect not firing, and accessibility regressions |
+| `test:visual` | The page looking wrong at any of four viewport widths |
 
 ## Seeing the change
 
@@ -40,6 +41,27 @@ and watch its log for a `https://*.trycloudflare.com` URL, which serves the
 page for as long as the job runs. Worth doing for anything visual: a diff of
 inline CSS does not tell you how the page looks on a phone, and following the
 redirect is the one behaviour a diff cannot show at all.
+
+## Visual changes
+
+`test:visual` screenshots the page at 375, 768, 1280 and 1680 wide and compares
+against committed baselines. A failure is posted as one comment on the pull
+request or merge request, with the baseline, the current render and the diff
+side by side, and that comment is edited in place on each run rather than
+piling up. It disappears when the comparison goes green.
+
+Baselines are **per architecture**, in two committed sets. Chromium renders
+text differently on arm64 and x64, so a single set would leave one of the two
+pipelines permanently red. Regenerate both when a visual change is intended:
+
+| Set | How |
+| --- | --- |
+| `x64` | Run the `Update visual baselines` workflow, download the artifact |
+| `arm64` | Run the manual `visual:update` CI job, download the artifact |
+
+Commit both. Do not regenerate a set on hardware that does not match it, which
+includes running `test:visual:update` locally and committing the result unless
+your machine matches the set you are replacing.
 
 ## Commits
 

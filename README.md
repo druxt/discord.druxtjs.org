@@ -42,6 +42,7 @@ sets both up.
 | `pnpm lint` | HTML, the inline stylesheet, Markdown, spelling, private hosts |
 | `pnpm test` | Markup and invite consistency. Fast, no browser |
 | `pnpm test:e2e` | Redirect, keyboard, reduced motion, axe. Needs Chromium |
+| `pnpm test:visual` | Four viewports against committed screenshots |
 
 `mise run ci` runs all of it the way CI does. Install the commit hooks once
 per clone with `mise run hooks:install`.

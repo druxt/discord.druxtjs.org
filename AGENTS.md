@@ -36,6 +36,14 @@ request, not a way to get green.
 `.gitlab-ci.yml` runs the same checks where review happens. A check added to
 one belongs in the other.
 
+## Visual baselines are per architecture
+
+There are two committed baseline sets, `arm64` and `x64`, because Chromium's
+text rendering differs between them. Regenerating one and committing it alone
+turns the other pipeline red, and regenerating both from the same machine is
+worse, because it looks correct and is not. Each set comes from a job running
+on that architecture. See CONTRIBUTING.md.
+
 ## Commands
 
 | Command | What it does |
@@ -44,3 +52,4 @@ one belongs in the other.
 | `pnpm lint` | HTML, stylesheet, Markdown, spelling, private hosts |
 | `pnpm test` | Markup and invite consistency, no browser |
 | `pnpm test:e2e` | Playwright: redirect, keyboard, reduced motion, axe |
+| `pnpm test:visual` | Four viewports against this architecture's baselines |
