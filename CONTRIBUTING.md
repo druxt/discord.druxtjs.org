@@ -33,6 +33,14 @@ If you only touched prose, `pnpm lint` is enough.
 | `test` | The invite drifting apart across the four places it is written |
 | `test:e2e` | The redirect not firing, and accessibility regressions |
 
+## Seeing the change
+
+The GitLab pipeline has a manual `preview` job. Run it from the pipeline view
+and watch its log for a `https://*.trycloudflare.com` URL, which serves the
+page for as long as the job runs. Worth doing for anything visual: a diff of
+inline CSS does not tell you how the page looks on a phone, and following the
+redirect is the one behaviour a diff cannot show at all.
+
 ## Commits
 
 [Conventional Commits](https://www.conventionalcommits.org). The commit-msg
