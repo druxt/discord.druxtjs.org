@@ -1,0 +1,5 @@
+{
+  // Issue and merge/pull request templates open at a section heading; the
+  // form's own title is the h1 and lives outside the file.
+  "MD041": false
+}
