@@ -44,6 +44,16 @@ turns the other pipeline red, and regenerating both from the same machine is
 worse, because it looks correct and is not. Each set comes from a job running
 on that architecture. See CONTRIBUTING.md.
 
+## The visual-reports branch is not source
+
+`visual-reports` is an orphan branch holding screenshots referenced by pull
+request comments, because GitHub will not accept an image through its API.
+Never merge it, never deploy from it, and do not treat its contents as part of
+the project. A failing run replaces that PR's directory; a passing run deletes
+the comment but leaves the images, and git keeps the blobs either way, so the
+branch is append-only in practice. That is fine at this repository's rate of
+change and worth knowing before someone wonders why it exists.
+
 ## Commands
 
 | Command | What it does |
