@@ -1,3 +1,4 @@
+actionlint
 antialiased
 axe
 codeql
@@ -17,6 +18,7 @@ middot
 namecheap
 noindex
 noopener
+oneline
 pnpm
 realityloop
 redirector

@@ -83,8 +83,33 @@ lint:yaml:
   image: mcr.microsoft.com/devcontainers/python:3
   interruptible: true
   script:
+    - section_start "yamllint" "Linting YAML"
     - pip install yamllint -q
     - yamllint .gitlab-ci.yml .github/workflows/ci.yml
+    - section_end "yamllint"
+    # The GitHub workflow guards the branch Pages deploys from, and nothing on
+    # this side runs it, so lint it here rather than discovering a typo after a
+    # push. Architecture is detected because the runner may be ARM.
+    - section_start "actionlint" "Linting the GitHub Actions workflow"
+    - |
+      actionlint_version="1.7.7"
+      case "$(uname -m)" in
+        aarch64|arm64)
+          actionlint_arch=arm64
+          actionlint_sha256=401942f9c24ed71e4fe71b76c7d638f66d8633575c4016efd2977ce7c28317d0
+          ;;
+        x86_64)
+          actionlint_arch=amd64
+          actionlint_sha256=023070a287cd8cccd71515fedc843f1985bf96c436b7effaecce67290e7e0757
+          ;;
+        *) echo "Unsupported architecture: $(uname -m)" >&2; exit 1 ;;
+      esac
+      url="https://github.com/rhysd/actionlint/releases/download/v${actionlint_version}"
+      curl -fsSL "${url}/actionlint_${actionlint_version}_linux_${actionlint_arch}.tar.gz" -o /tmp/actionlint.tar.gz
+      echo "${actionlint_sha256}  /tmp/actionlint.tar.gz" | sha256sum -c -
+      tar -xzf /tmp/actionlint.tar.gz -C /tmp actionlint
+    - /tmp/actionlint -no-color -oneline .github/workflows/ci.yml
+    - section_end "actionlint"
 
 commitlint:
   extends: .node
