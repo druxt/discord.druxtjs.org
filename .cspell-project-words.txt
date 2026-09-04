@@ -8,6 +8,7 @@ cspell
 ddev
 druxt
 druxtjs
+esac
 htmlvalidate
 knip
 linkcheck
