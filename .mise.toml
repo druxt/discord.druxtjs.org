@@ -1,0 +1,58 @@
+[tools]
+node = "22"
+"npm:pnpm" = "10"
+
+[tasks.install]
+description = "Install dependencies"
+run = "pnpm install"
+
+[tasks.lint]
+description = "Run every linter (html, style, markdown, spelling)"
+run = "pnpm lint"
+
+[tasks."lint:html"]
+description = "Validate index.html"
+run = "pnpm lint:html"
+
+[tasks."lint:style"]
+description = "Lint the stylesheet embedded in index.html"
+run = "pnpm lint:style"
+
+[tasks."lint:md"]
+description = "Lint Markdown"
+run = "pnpm lint:md"
+
+[tasks."lint:spell"]
+description = "Spell-check the repository"
+run = "pnpm lint:spell"
+
+[tasks.test]
+description = "Run the markup and invite-consistency tests"
+run = "pnpm test"
+
+[tasks."test:e2e"]
+description = "Run the Playwright suite (redirect, keyboard, reduced motion, axe)"
+run = "pnpm exec playwright install --with-deps chromium && pnpm test:e2e"
+
+[tasks.ci]
+description = "Everything CI runs"
+depends = ["lint", "test", "test:e2e"]
+
+[tasks.commitlint]
+description = "Validate a commit message (pass the message-file path)"
+run = "pnpm exec commitlint --edit"
+
+# ---------------------------------------------------------------------------
+# Git hooks. Install once per clone with `mise run hooks:install`.
+# ---------------------------------------------------------------------------
+[tasks."hooks:install"]
+description = "Point git at the committed .githooks/ directory"
+run = "git config core.hooksPath .githooks"
+
+[tasks."hooks:commit-msg"]
+description = "commit-msg hook - validate the message with commitlint"
+run = "pnpm exec commitlint --edit"
+
+[tasks."hooks:pre-commit"]
+description = "pre-commit hook - lint and run the fast tests"
+run = "pnpm lint && pnpm test"
