@@ -20,9 +20,11 @@
     "lint:md": "markdownlint-cli2 \"**/*.md\" \"#node_modules\"",
     "lint:spell": "cspell --no-progress --dot \"**/*.{html,md,json,jsonc,yml,yaml,js,mjs,toml}\"",
     "test": "node --test \"tests/unit/**/*.test.js\"",
-    "test:e2e": "playwright test",
-    "test:all": "pnpm test && pnpm test:e2e",
-    "lint:private": "node scripts/lint-private-refs.mjs"
+    "test:e2e": "playwright test --project=behaviour",
+    "test:all": "pnpm test && pnpm test:e2e && pnpm test:visual",
+    "lint:private": "node scripts/lint-private-refs.mjs",
+    "test:visual": "playwright test --project=phone --project=tablet --project=desktop --project=wide",
+    "test:visual:update": "pnpm test:visual --update-snapshots"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",
