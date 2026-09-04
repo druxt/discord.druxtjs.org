@@ -1,0 +1,6 @@
+{
+  // Prose is hard-wrapped by hand rather than at a fixed column.
+  "MD013": false,
+  // The redirect page's README uses a bare "---" rule between sections.
+  "MD035": { "style": "---" }
+}
