@@ -13,6 +13,7 @@ stages:
   - lint
   - test
   - secret-detection
+  - preview
 
 variables:
   NODE_IMAGE: node:22.23.2
@@ -215,3 +216,49 @@ test:e2e:
     reports:
       junit: test-results/junit.xml
     expire_in: 1 week
+
+#
+# --- Preview ---
+#
+# Manual: serves the page through a Cloudflare quick tunnel so a reviewer can
+# see the real thing, on a phone, with the real fonts and the real redirect,
+# rather than reading a diff of inline CSS. No account or token needed.
+#
+# Click "Run" on this job in the pipeline view, then watch its log for the
+# https://*.trycloudflare.com URL. The tunnel lives as long as the job.
+#
+# Following the redirect leaves the preview and lands on the live Discord
+# invite, which is the point: it is the one behaviour a static diff cannot
+# show you.
+preview:
+  stage: preview
+  image: $NODE_IMAGE
+  interruptible: false
+  needs: []
+  timeout: 1h
+  before_script: []
+  rules:
+    - when: manual
+      allow_failure: true
+  script:
+    - |
+      cloudflared_version="2026.8.3"
+      case "$(uname -m)" in
+        aarch64|arm64)
+          cloudflared_arch=arm64
+          cloudflared_sha256=4bcfd35521a7cbc545ebfd5d57334a71ee180e2a64874981f374c81472118391
+          ;;
+        x86_64)
+          cloudflared_arch=amd64
+          cloudflared_sha256=f29324fe934d1e100617484c78deef803c4dc2cd351d645bbde42e96b4fccc5e
+          ;;
+        *) echo "Unsupported architecture: $(uname -m)" >&2; exit 1 ;;
+      esac
+      url="https://github.com/cloudflare/cloudflared/releases/download/${cloudflared_version}"
+      curl -fsSL "${url}/cloudflared-linux-${cloudflared_arch}" -o /usr/local/bin/cloudflared
+      echo "${cloudflared_sha256}  /usr/local/bin/cloudflared" | sha256sum -c -
+      chmod +x /usr/local/bin/cloudflared
+    - npx --yes serve --no-clipboard --no-port-switching -l 8080 . &
+    - npx --yes wait-on http://127.0.0.1:8080
+    - echo "Tunnel starting - the preview URL appears below as https://*.trycloudflare.com"
+    - cloudflared tunnel --url http://127.0.0.1:8080 --no-autoupdate
