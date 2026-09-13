@@ -9,7 +9,7 @@
     "type": "git",
     "url": "https://github.com/druxt/discord.druxtjs.org.git"
   },
-  "packageManager": "pnpm@10.34.5",
+  "packageManager": "pnpm@12.4.1",
   "engines": {
     "node": ">=22"
   },
